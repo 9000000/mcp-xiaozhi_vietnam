@@ -1,68 +1,67 @@
-# MCP Sample Project | MCP 示例项目
+# Dự án mẫu MCP
 
-A powerful interface for extending AI capabilities through remote control, calculations, email operations, knowledge search, and more.
+Một giao diện mạnh mẽ để mở rộng khả năng AI thông qua điều khiển từ xa, tính toán, thao tác email, tìm kiếm kiến thức và nhiều hơn nữa.
 
-一个强大的接口，用于通过远程控制、计算、邮件操作、知识搜索等方式扩展AI能力。
+## Tổng quan
 
-## Overview | 概述
+MCP (Model Context Protocol) là một giao thức cho phép máy chủ cung cấp các công cụ có thể được gọi bởi các mô hình ngôn ngữ. Các công cụ cho phép mô hình tương tác với các hệ thống bên ngoài, chẳng hạn như truy vấn cơ sở dữ liệu, gọi API hoặc thực hiện các phép tính. Mỗi công cụ được xác định duy nhất bởi một tên và bao gồm siêu dữ liệu mô tả lược đồ của nó.
 
-MCP (Model Context Protocol) is a protocol that allows servers to expose tools that can be invoked by language models. Tools enable models to interact with external systems, such as querying databases, calling APIs, or performing computations. Each tool is uniquely identified by a name and includes metadata describing its schema.
+## Tính năng
 
-MCP（模型上下文协议）是一个允许服务器向语言模型暴露可调用工具的协议。这些工具使模型能够与外部系统交互，例如查询数据库、调用API或执行计算。每个工具都由一个唯一的名称标识，并包含描述其模式的元数据。
+- 🔌 Giao tiếp hai chiều giữa AI và các công cụ bên ngoài
+- 🔄 Tự động kết nối lại với thời gian chờ tăng dần
+- 📊 Truyền dữ liệu thời gian thực
+- 🛠️ Giao diện tạo công cụ dễ sử dụng
+- 🔒 Giao tiếp WebSocket an toàn
+- ⚙️ Hỗ trợ nhiều loại truyền tải (stdio/sse/http)
 
-## Features | 特性
+## Bắt đầu nhanh
 
-- 🔌 Bidirectional communication between AI and external tools | AI与外部工具之间的双向通信
-- 🔄 Automatic reconnection with exponential backoff | 具有指数退避的自动重连机制
-- 📊 Real-time data streaming | 实时数据流传输
-- 🛠️ Easy-to-use tool creation interface | 简单易用的工具创建接口
-- 🔒 Secure WebSocket communication | 安全的WebSocket通信
-- ⚙️ Multiple transport types support (stdio/sse/http) | 支持多种传输类型（stdio/sse/http）
+1. Cài đặt các phụ thuộc:
 
-## Quick Start | 快速开始
-
-1. Install dependencies | 安装依赖:
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Set up environment variables | 设置环境变量:
+2. Thiết lập các biến môi trường:
+
 ```bash
 export MCP_ENDPOINT=<your_mcp_endpoint>
 ```
 
-3. Run the calculator example | 运行计算器示例:
+3. Chạy ví dụ máy tính:
+
 ```bash
 python mcp_pipe.py calculator.py
 ```
 
-Or run all configured servers | 或运行所有配置的服务:
+Hoặc chạy tất cả các máy chủ đã cấu hình:
+
 ```bash
 python mcp_pipe.py
 ```
 
-*Requires `mcp_config.json` configuration file with server definitions (supports stdio/sse/http transport types)*
+*Yêu cầu tệp cấu hình `mcp_config.json` với các định nghĩa máy chủ (hỗ trợ các loại truyền tải stdio/sse/http)*
 
-*需要 `mcp_config.json` 配置文件定义服务器（支持 stdio/sse/http 传输类型）*
+## Cấu trúc dự án
 
-## Project Structure | 项目结构
+- `mcp_pipe.py`: Ống giao tiếp chính xử lý các kết nối WebSocket và quản lý quy trình
+- `calculator.py`: Triển khai công cụ MCP ví dụ cho các phép tính toán học
+- `requirements.txt`: Các phụ thuộc của dự án
 
-- `mcp_pipe.py`: Main communication pipe that handles WebSocket connections and process management | 处理WebSocket连接和进程管理的主通信管道
-- `calculator.py`: Example MCP tool implementation for mathematical calculations | 用于数学计算的MCP工具示例实现
-- `requirements.txt`: Project dependencies | 项目依赖
+## Máy chủ điều khiển bằng cấu hình
 
-## Config-driven Servers | 通过配置驱动的服务
+Chỉnh sửa tệp `mcp_config.json` để cấu hình danh sách máy chủ (cũng có thể đặt biến môi trường `MCP_CONFIG` trỏ đến tệp cấu hình khác).
 
-编辑 `mcp_config.json` 文件来配置服务器列表（也可设置 `MCP_CONFIG` 环境变量指向其他配置文件）。
+Hướng dẫn cấu hình:
 
-配置说明：
-- 无参数时启动所有配置的服务（自动跳过 `disabled: true` 的条目）
-- 有参数时运行单个本地脚本文件
-- `type=stdio` 直接启动；`type=sse/http` 通过 `python -m mcp_proxy` 代理
+- Không có tham số sẽ khởi động tất cả các máy chủ đã cấu hình (tự động bỏ qua các mục `disabled: true`)
+- Có tham số sẽ chạy một tệp kịch bản cục bộ duy nhất
+- `type=stdio` khởi động trực tiếp; `type=sse/http` thông qua proxy `python -m mcp_proxy`
 
-## Creating Your Own MCP Tools | 创建自己的MCP工具
+## Tạo công cụ MCP của riêng bạn
 
-Here's a simple example of creating an MCP tool | 以下是一个创建MCP工具的简单示例:
+Dưới đây là một ví dụ đơn giản về cách tạo một công cụ MCP:
 
 ```python
 from mcp.server.fastmcp import FastMCP
@@ -79,16 +78,16 @@ if __name__ == "__main__":
     mcp.run(transport="stdio")
 ```
 
-## Use Cases | 使用场景
+## Các trường hợp sử dụng
 
-- Mathematical calculations | 数学计算
-- Email operations | 邮件操作
-- Knowledge base search | 知识库搜索
-- Remote device control | 远程设备控制
-- Data processing | 数据处理
-- Custom tool integration | 自定义工具集成
+- Các phép tính toán học
+- Thao tác email
+- Tìm kiếm cơ sở kiến thức
+- Điều khiển thiết bị từ xa
+- Xử lý dữ liệu
+- Tích hợp công cụ tùy chỉnh
 
-## Requirements | 环境要求
+## Yêu cầu
 
 - Python 3.7+
 - websockets>=11.0.3
@@ -97,19 +96,15 @@ if __name__ == "__main__":
 - pydantic>=2.11.4
 - mcp-proxy>=0.8.2
 
-## Contributing | 贡献指南
+## Đóng góp
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Hoan nghênh các đóng góp! Vui lòng gửi Pull Request.
 
-欢迎贡献代码！请随时提交Pull Request。
+## Giấy phép
 
-## License | 许可证
+Dự án này được cấp phép theo Giấy phép MIT - xem tệp LICENSE để biết chi tiết.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## Lời cảm ơn
 
-本项目采用MIT许可证 - 详情请查看LICENSE文件。
-
-## Acknowledgments | 致谢
-
-- Thanks to all contributors who have helped shape this project | 感谢所有帮助塑造这个项目的贡献者
-- Inspired by the need for extensible AI capabilities | 灵感来源于对可扩展AI能力的需求
+- Cảm ơn tất cả các cộng tác viên đã giúp định hình dự án này
+- Lấy cảm hứng từ nhu cầu về khả năng AI có thể mở rộng
