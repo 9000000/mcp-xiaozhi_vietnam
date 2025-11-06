@@ -1,19 +1,14 @@
 {
-    "mcpServers": {
-        "calculator": {
-            "command": "python",
-            "args": ["calculator.py"],
-            "type": "stdio"
-        },
-        "news": {
-            "command": "python",
-            "args": ["news.py"],
-            "type": "stdio"
-        },
-        "music": {
-            "command": "python",
-            "args": ["music.py"],
-            "type": "stdio"
-        }
+  "mcpServers": {
+    "calculator": {
+      "command": "python",
+      "args": ["calculator.py"],
+      "type": "stdio"
+    },
+    "VnExpress": {
+      "command": "python",
+      "args": ["VnExpress.py"],
+      "type": "stdio"
     }
+  }
 }

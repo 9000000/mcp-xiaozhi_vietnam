@@ -7,7 +7,7 @@ from datetime import datetime
 import json
 import re
 
-logger = logging.getLogger('News')
+logger = logging.getLogger('VnExpress')
 
 # Fix UTF-8 encoding for Windows console
 if sys.platform == 'win32':
@@ -15,7 +15,7 @@ if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
 
 # Create an MCP server
-mcp = FastMCP("News")
+mcp = FastMCP("VnExpress")
 
 @mcp.tool()
 def get_vnexpress_news(category: str = "home", limit: int = 10) -> dict:
