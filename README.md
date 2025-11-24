@@ -109,7 +109,30 @@ make restart
 make ps
 ```
 
-📖 **Xem thêm**: [DOCKER.md](DOCKER.md) để biết chi tiết về Docker deployment
+#### 4. Tối ưu kích thước (Alpine version)
+
+Để có image nhỏ nhất (~50-80MB thay vì ~150-200MB):
+
+```bash
+# Build Alpine version
+docker-compose -f docker-compose.alpine.yml build
+
+# Run
+docker-compose -f docker-compose.alpine.yml up -d
+
+# Hoặc dùng Makefile
+make build-alpine
+make up-alpine
+
+# So sánh kích thước
+make compare
+```
+
+📖 **Xem thêm**: [OPTIMIZATION.md](OPTIMIZATION.md) để biết chi tiết về tối ưu hóa
+
+📖 **Xem thêm**: 
+- [DOCKER.md](DOCKER.md) - Chi tiết về Docker deployment
+- [OPTIMIZATION.md](OPTIMIZATION.md) - Tối ưu hóa Docker image
 
 ### 💻 Cài đặt trực tiếp
 

@@ -1,31 +1,27 @@
-# Multi-stage build for minimal image size
-# Stage 1: Builder
-FROM python:3.12-slim AS builder
+# Ultra-minimal Docker image using Alpine Linux
+# This creates the smallest possible image (~50-80MB vs ~150-200MB with slim)
 
-# Set working directory
+# Stage 1: Builder
+FROM python:3.12-alpine AS builder
+
 WORKDIR /app
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
-
 # Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apk add --no-cache \
     gcc \
-    && rm -rf /var/lib/apt/lists/*
+    musl-dev \
+    libffi-dev \
+    openssl-dev
 
 # Copy requirements
 COPY requirements.txt .
 
-# Install dependencies to a local directory
+# Install Python dependencies
 RUN pip install --user --no-cache-dir --no-warn-script-location -r requirements.txt
 
 # Stage 2: Runtime
-FROM python:3.12-slim
+FROM python:3.12-alpine
 
-# Set working directory
 WORKDIR /app
 
 # Set environment variables
@@ -33,25 +29,28 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH=/home/appuser/.local/bin:$PATH
 
+# Install runtime dependencies only
+RUN apk add --no-cache \
+    libffi \
+    openssl
+
 # Copy Python dependencies from builder
 COPY --from=builder /root/.local /home/appuser/.local
 
-# Copy only necessary application files
+# Copy application files
 COPY mcp_pipe.py .
 COPY mcp_config.json .
 COPY *.py ./
 COPY docs/ ./docs/
 
 # Create non-root user
-RUN useradd -m -u 1000 appuser && \
+RUN adduser -D -u 1000 appuser && \
     chown -R appuser:appuser /app
 
-# Switch to non-root user
 USER appuser
 
-# Health check (optional)
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import sys; sys.exit(0)" || exit 1
 
-# Default command
 CMD ["python", "mcp_pipe.py"]

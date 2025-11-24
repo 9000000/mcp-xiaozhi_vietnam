@@ -67,3 +67,22 @@ check-token: ## Kiểm tra biến MCP_ENDPOINT
 	else \
 		echo "✓ MCP_ENDPOINT đã được set"; \
 	fi
+
+build-alpine: ## Build Alpine version (smallest size)
+	docker-compose -f docker-compose.alpine.yml build
+
+up-alpine: ## Khởi động Alpine version
+	docker-compose -f docker-compose.alpine.yml up -d
+
+down-alpine: ## Dừng Alpine version
+	docker-compose -f docker-compose.alpine.yml down
+
+compare: ## So sánh kích thước images
+	@chmod +x compare-images.sh 2>/dev/null || true
+	@./compare-images.sh 2>/dev/null || echo "Run: bash compare-images.sh"
+
+size: ## Xem kích thước image
+	@docker images mcp-xiaozhi-vietnam --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+
+analyze: ## Phân tích layers của image
+	docker history mcp-xiaozhi-vietnam:latest

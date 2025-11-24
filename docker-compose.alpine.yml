@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  mcp-servers:
+    build:
+      context: .
+      dockerfile: Dockerfile.alpine
+    image: mcp-xiaozhi-vietnam:alpine
+    container_name: mcp-xiaozhi-vietnam-alpine
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      # Thay YOUR_TOKEN_HERE bằng token thực tế của bạn
+      - MCP_ENDPOINT=${MCP_ENDPOINT:-wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN_HERE}
+      # Optional: Uncomment nếu sử dụng mp3-proxy
+      # - MP3_PROXY_URL=http://mp3-proxy:5005
+      # Optional: Uncomment nếu sử dụng invidious-proxy
+      # - INVIDIOUS_PROXY=http://invidious-proxy:5006
+    networks:
+      - mcp-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+    # Resource limits for minimal footprint
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # Optional: Add mp3-proxy service if needed
+  # mp3-proxy:
+  #   image: your-mp3-proxy-image
+  #   container_name: mp3-proxy
+  #   restart: unless-stopped
+  #   ports:
+  #     - "5005:5005"
+  #   networks:
+  #     - mcp-network
+
+  # Optional: Add invidious-proxy service if needed
+  # invidious-proxy:
+  #   image: your-invidious-proxy-image
+  #   container_name: invidious-proxy
+  #   restart: unless-stopped
+  #   ports:
+  #     - "5006:5006"
+  #   environment:
+  #     - INVIDIOUS_PROXY=http://localhost:5006
+  #   networks:
+  #     - mcp-network
+
+networks:
+  mcp-network:
+    driver: bridge
