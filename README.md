@@ -22,36 +22,126 @@ MCP (Model Context Protocol) là một giao thức cho phép máy chủ cung c�
 
 ## Yêu cầu cài đặt
 
-[Cài Python phiên bản mới nhất](https://www.python.org/downloads/)
+### Cách 1: Sử dụng Docker (Khuyến nghị)
 
-## 1. Cài đặt các phụ thuộc:
+- Docker Engine 20.10+
+- Docker Compose 2.0+
+
+### Cách 2: Cài đặt trực tiếp
+
+- [Python 3.12+](https://www.python.org/downloads/)
+
+## Cài đặt và Chạy
+
+### 🐳 Sử dụng Docker (Khuyến nghị)
+
+#### Cách 1: Sử dụng Setup Script (Dễ nhất)
+
+**Linux/macOS:**
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\setup.ps1
+```
+
+Script sẽ tự động:
+- Kiểm tra Docker
+- Hỏi token và cấu hình
+- Build image
+- Khởi động containers
+
+#### Cách 2: Cấu hình thủ công
+
+**Bước 1: Cấu hình token**
+
+**Option A: Chỉnh sửa docker-compose.yml (Đơn giản nhất)**
+
+Mở `docker-compose.yml` và thay `YOUR_TOKEN_HERE`:
+```yaml
+environment:
+  - MCP_ENDPOINT=wss://api.xiaozhi.me/mcp/?token=YOUR_ACTUAL_TOKEN_HERE
+```
+
+**Option B: Dùng biến môi trường**
+```bash
+# Linux/macOS
+export MCP_ENDPOINT="wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN_HERE"
+
+# Windows PowerShell
+$env:MCP_ENDPOINT = "wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN_HERE"
+```
+
+**Bước 2: Build và chạy**
+
+```bash
+# Sử dụng Docker Compose
+docker-compose up -d
+
+# Hoặc sử dụng Makefile (nếu có make)
+make build
+make up
+
+# Xem logs
+docker-compose logs -f
+# hoặc
+make logs
+```
+
+#### 3. Quản lý containers
+
+```bash
+# Dừng
+docker-compose down
+
+# Khởi động lại
+docker-compose restart
+
+# Xem trạng thái
+docker-compose ps
+
+# Hoặc dùng Makefile
+make down
+make restart
+make ps
+```
+
+📖 **Xem thêm**: [DOCKER.md](DOCKER.md) để biết chi tiết về Docker deployment
+
+### 💻 Cài đặt trực tiếp
+
+#### 1. Cài đặt dependencies
 
 ```bash
 pip install -r requirements.txt
-pip install requests beautifulsoup4 lxml
 ```
 
-## 2. Thiết lập các biến môi trường:
+#### 2. Thiết lập biến môi trường
 
 ```bash
-export MCP_ENDPOINT=<your_mcp_endpoint>
-# Windows (PowerShell): $env:MCP_ENDPOINT = "<ws_endpoint>"
+# Linux/macOS
+export MCP_ENDPOINT=wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN_HERE
+
+# Windows PowerShell
+$env:MCP_ENDPOINT = "wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN_HERE"
 ```
 
+#### 3. Chạy
 
-```bash
-pip install requests beautifulsoup4 lxml
-```
-
-## 3. Cách chạy
-
-### Chạy riêng lẻ
+##### Chạy riêng lẻ
 ```bash
 python mcp_pipe.py VnExpress.py
 ```
 
-### Chạy cùng các tool khác
-Cập nhật file `mcp_config.json`:
+##### Chạy tất cả servers
+```bash
+python mcp_pipe.py
+```
+
+Cấu hình trong `mcp_config.json`:
 ```json
 {
   "mcpServers": {
@@ -64,12 +154,22 @@ Cập nhật file `mcp_config.json`:
       "command": "python",
       "args": ["VnExpress.py"],
       "type": "stdio"
+    },
+    "dantri_news": {
+      "command": "python",
+      "args": ["dantri_news.py"],
+      "type": "stdio"
+    },
+    "radio": {
+      "command": "python",
+      "args": ["radio.py"],
+      "type": "stdio"
     }
   }
 }
 ```
 
-*Yêu cầu tệp cấu hình `mcp_config.json` với các định nghĩa máy chủ (hỗ trợ các loại truyền tải stdio/sse/http)*
+*Hỗ trợ các loại truyền tải: stdio/sse/http*
 
 ## Cấu trúc dự án
 
