@@ -1,8 +1,14 @@
 # news.py
-from mcp.server.fastmcp import FastMCP
-import requests
+from fastmcp import FastMCP
+import urllib.request
 import xml.etree.ElementTree as ET
 import re
+import sys
+
+# Fix UTF-8 encoding for Windows console
+if sys.platform == 'win32':
+    sys.stderr.reconfigure(encoding='utf-8')
+    sys.stdout.reconfigure(encoding='utf-8')
 
 mcp = FastMCP("NewsFetcher")
 
@@ -97,13 +103,16 @@ def get_latest_news(topic: str = "tin-moi", limit: int = 5) -> dict:
     """
     url = RSS_FEEDS.get(topic, RSS_FEEDS["tin-moi"])
     try:
-        res = requests.get(url, timeout=10)
-        res.raise_for_status()
+        req = urllib.request.Request(url, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        })
+        with urllib.request.urlopen(req, timeout=10) as response:
+            xml_content = response.read().decode('utf-8')
     except Exception as e:
         return {"success": False, "message": f"Không thể tải RSS: {e}"}
 
     try:
-        parsed = parse_xml_to_dict(res.text)
+        parsed = parse_xml_to_dict(xml_content)
         items = extract_rss_items(parsed)
         results = [
             {

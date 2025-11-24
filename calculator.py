@@ -1,7 +1,9 @@
 # server.py
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 import sys
 import logging
+import math
+import random
 
 logger = logging.getLogger('Calculator')
 
@@ -9,9 +11,6 @@ logger = logging.getLogger('Calculator')
 if sys.platform == 'win32':
     sys.stderr.reconfigure(encoding='utf-8')
     sys.stdout.reconfigure(encoding='utf-8')
-
-import math
-import random
 
 # Create an MCP server
 mcp = FastMCP("Calculator")

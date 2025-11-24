@@ -17,7 +17,12 @@
     },
     "radio": {
       "command": "python",
-      "args": ["dantri_news.py"],
+      "args": ["radio.py"],
+      "type": "stdio"
+    },
+    "invidious": {
+      "command": "python",
+      "args": ["invidious_mcp.py"],
       "type": "stdio"
     },
     "news": {

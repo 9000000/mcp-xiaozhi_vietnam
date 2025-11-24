@@ -1,7 +1,15 @@
 # invidious_mcp.py
-from mcp.server.fastmcp import FastMCP
-import requests
+from fastmcp import FastMCP
+import urllib.request
+import urllib.parse
+import json
+import sys
 import os
+
+# Fix UTF-8 encoding for Windows console
+if sys.platform == 'win32':
+    sys.stderr.reconfigure(encoding='utf-8')
+    sys.stdout.reconfigure(encoding='utf-8')
 
 # === Cấu hình ===
 PROXY_BASE = os.getenv("INVIDIOUS_PROXY", "http://localhost:5006")
@@ -15,9 +23,11 @@ mcp = FastMCP("Invidious Music Player (via Proxy)")
 def search_video(query: str) -> dict:
     """Tìm kiếm video nhạc qua Invidious Proxy."""
     try:
-        r = requests.get(f"{PROXY_BASE}/search", params={"q": query}, timeout=10)
-        r.raise_for_status()
-        data = r.json()
+        url = f"{PROXY_BASE}/search?q={urllib.parse.quote_plus(query)}"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read().decode('utf-8'))
+        
         if isinstance(data, list):
             results = [
                 {
@@ -44,9 +54,10 @@ def search_video(query: str) -> dict:
 def get_video_info(videoId: str) -> dict:
     """Lấy thông tin và link phát nhạc từ proxy."""
     try:
-        r = requests.get(f"{PROXY_BASE}/video_info", params={"id": videoId}, timeout=10)
-        r.raise_for_status()
-        data = r.json()
+        url = f"{PROXY_BASE}/video_info?id={urllib.parse.quote_plus(videoId)}"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read().decode('utf-8'))
 
         return {
             "success": True,
@@ -68,9 +79,10 @@ def get_video_info(videoId: str) -> dict:
 def get_trending() -> dict:
     """Lấy danh sách video trending từ Invidious Proxy."""
     try:
-        r = requests.get(f"{PROXY_BASE}/trending", timeout=10)
-        r.raise_for_status()
-        data = r.json()
+        url = f"{PROXY_BASE}/trending"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read().decode('utf-8'))
 
         results = [
             {
@@ -95,9 +107,16 @@ def get_trending() -> dict:
 def play_pcm(song: str, artist: str = "") -> dict:
     """Tìm bài hát và lấy link stream PCM (cho ESP32 phát trực tiếp)."""
     try:
-        r = requests.get(f"{PROXY_BASE}/stream_pcm", params={"song": song, "artist": artist}, timeout=60)
-        r.raise_for_status()
-        data = r.json()
+        params = {"song": song}
+        if artist:
+            params["artist"] = artist
+        query_string = urllib.parse.urlencode(params)
+        url = f"{PROXY_BASE}/stream_pcm?{query_string}"
+        
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=60) as response:
+            data = json.loads(response.read().decode('utf-8'))
+        
         if "audio_url" not in data:
             return {"success": False, "message": "Không tìm thấy bài hát hoặc không có luồng PCM."}
 
@@ -120,9 +139,10 @@ def play_pcm(song: str, artist: str = "") -> dict:
 def health_check() -> dict:
     """Kiểm tra tình trạng hoạt động của Invidious Proxy."""
     try:
-        r = requests.get(f"{PROXY_BASE}/health", timeout=5)
-        r.raise_for_status()
-        data = r.json()
+        url = f"{PROXY_BASE}/health"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode('utf-8'))
         return {"success": True, "proxy_status": data}
     except Exception as e:
         return {"success": False, "message": f"Lỗi khi kiểm tra: {e}"}
