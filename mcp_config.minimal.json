@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "calculator": {
-      "command": "python",
-      "args": ["calculator.py"],
-      "type": "stdio"
-    }
-  }
-}
