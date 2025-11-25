@@ -2,7 +2,7 @@ from fastmcp import FastMCP
 import sys
 import logging
 import requests
-import os
+import json
 from datetime import datetime
 
 logger = logging.getLogger('Weather')
