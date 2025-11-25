@@ -15,23 +15,5 @@
       "args": ["dantri_news.py"],
       "type": "stdio"
     },
-    "radio": {
-      "command": "python",
-      "args": ["radio.py"],
-      "type": "stdio"
-      "disabled": "true"
-    },
-    "invidious": {
-      "command": "python",
-      "args": ["invidious_mcp.py"],
-      "type": "stdio"
-      "disabled": "true"
-    },
-    "news": {
-      "command": "python",
-      "args": ["news.py"],
-      "type": "stdio"
-      "disabled": "true"
-    }
   }
 }
