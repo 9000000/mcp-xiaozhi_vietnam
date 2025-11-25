@@ -1,23 +1,28 @@
-name: Build Release Images
+name: Build and Push Docker Images
 
 on:
   push:
+    branches:
+      - main
+      - develop
     tags:
       - 'v*.*.*'
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version tag (e.g., v1.0.0)'
-        required: true
-        type: string
 
 env:
-  IMAGE_NAME: mcp-xiaozhi-vietnam
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-multiarch:
-    name: Build Multi-arch Images
+  build-and-push-release:
+    name: Build and Push Release Images
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     strategy:
       matrix:
         variant: [slim, alpine]
@@ -32,16 +37,36 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Extract version
         id: version
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${GITHUB_REF#refs/heads/}
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "version_short=${VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            suffix=-${{ matrix.variant }},onlatest=true
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
 
       - name: Set Dockerfile
         id: dockerfile
@@ -52,32 +77,25 @@ jobs:
             echo "file=Dockerfile" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build multi-arch image
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./${{ steps.dockerfile.outputs.file }}
           platforms: linux/amd64,linux/arm64
-          push: false
-          tags: |
-            ${{ env.IMAGE_NAME }}:${{ matrix.variant }}-${{ steps.version.outputs.version }}
-            ${{ env.IMAGE_NAME }}:${{ matrix.variant }}-latest
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=oci,dest=/tmp/${{ matrix.variant }}-${{ steps.version.outputs.version }}.tar
-
-      - name: Upload image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image-${{ matrix.variant }}-${{ steps.version.outputs.version }}
-          path: /tmp/${{ matrix.variant }}-${{ steps.version.outputs.version }}.tar
-          retention-days: 30
 
   create-release:
-    name: Create Release
-    needs: build-multiarch
+    name: Create GitHub Release
+    needs: build-and-push-release
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout code
@@ -89,66 +107,58 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/}
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts
-
       - name: Generate release notes
         run: |
           cat > release-notes.md << 'EOF'
           ## 🐳 Docker Images
           
-          Multi-architecture Docker images for amd64 and arm64.
+          Multi-architecture Docker images available on GitHub Container Registry.
           
           ### 📦 Available Variants
           
-          - **Slim** (Debian-based): ~150-200MB
-            - Better compatibility
-            - Recommended for development
+          **Slim (Debian-based)**: ~150-200MB
+          ```bash
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-slim
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-slim
+          ```
           
-          - **Alpine** (Alpine Linux): ~50-80MB
-            - Smallest size
-            - Recommended for production
+          **Alpine (Alpine Linux)**: ~50-80MB
+          ```bash
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-alpine
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-alpine
+          ```
           
           ### 🏗️ Supported Platforms
           
           - linux/amd64 (x86_64)
           - linux/arm64 (ARM64/aarch64)
           
-          ### 📥 Download
-          
-          Download the OCI image archives from the artifacts below and load them:
+          ### 🚀 Quick Start
           
           ```bash
-          # Load Slim image
-          docker load < docker-image-slim-${{ steps.version.outputs.version }}.tar
+          # Pull and run Slim version
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-slim
+          docker run --rm -e MCP_ENDPOINT="wss://..." ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-slim
           
-          # Load Alpine image
-          docker load < docker-image-alpine-${{ steps.version.outputs.version }}.tar
-          ```
-          
-          ### 🚀 Usage
-          
-          ```bash
-          # Run Slim version
-          docker run --rm -e MCP_ENDPOINT="wss://..." mcp-xiaozhi-vietnam:slim-latest
-          
-          # Run Alpine version
-          docker run --rm -e MCP_ENDPOINT="wss://..." mcp-xiaozhi-vietnam:alpine-latest
+          # Pull and run Alpine version (recommended for production)
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-alpine
+          docker run --rm -e MCP_ENDPOINT="wss://..." ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-alpine
           ```
           
           ### 📖 Documentation
           
-          - [Docker Guide](DOCKER.md)
-          - [Optimization Guide](OPTIMIZATION.md)
-          - [README](README.md)
+          - [Docker Guide](https://github.com/${{ github.repository }}/blob/main/DOCKER.md)
+          - [Optimization Guide](https://github.com/${{ github.repository }}/blob/main/OPTIMIZATION.md)
+          - [README](https://github.com/${{ github.repository }}/blob/main/README.md)
+          
+          ### 🔗 Registry
+          
+          View all images: https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }}
           EOF
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ./artifacts/**/*.tar
           body_path: release-notes.md
           draft: false
           prerelease: false
@@ -156,26 +166,27 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-summary:
-    name: Build Summary
-    needs: build-multiarch
+    name: Release Summary
+    needs: [build-and-push-release, create-release]
     runs-on: ubuntu-latest
     if: always()
     
     steps:
       - name: Generate summary
         run: |
-          echo "## 🎉 Release Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎉 Release ${{ github.ref_name }} Published" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ✅ Built Images" >> $GITHUB_STEP_SUMMARY
-          echo "- Slim (Debian): amd64, arm64" >> $GITHUB_STEP_SUMMARY
-          echo "- Alpine (Linux): amd64, arm64" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Images Pushed to GHCR" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "OCI image archives are available in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
+          echo "| Variant | Tag | Pull Command |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----|--------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Slim | ${{ github.ref_name }}-slim | \`docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-slim\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Alpine | ${{ github.ref_name }}-alpine | \`docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-alpine\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📥 How to Use" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "# Download artifact and load" >> $GITHUB_STEP_SUMMARY
-          echo "docker load < docker-image-slim-*.tar" >> $GITHUB_STEP_SUMMARY
-          echo "docker load < docker-image-alpine-*.tar" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "### 🏗️ Platforms" >> $GITHUB_STEP_SUMMARY
+          echo "- linux/amd64 (x86_64)" >> $GITHUB_STEP_SUMMARY
+          echo "- linux/arm64 (ARM64/aarch64)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [View on GHCR](https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [Release Notes](https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }})" >> $GITHUB_STEP_SUMMARY

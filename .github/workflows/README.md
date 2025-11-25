@@ -1,75 +1,33 @@
 # GitHub Actions Workflows
 
-Tài liệu về các GitHub Actions workflows trong dự án.
+Tài liệu về GitHub Actions workflow trong dự án.
 
-## 📋 Danh sách Workflows
+## 📋 Workflow
 
-### 1. Docker Build (`docker-build.yml`)
+### Docker Build and Push (`docker-release.yml`)
 
 **Trigger:**
 - Push to `main` or `develop` branches
-- Push tags `v*`
+- Push tags `v*.*.*` (semantic versioning)
 - Pull requests to `main`
 - Manual dispatch
 
 **Chức năng:**
 - Build Docker images cho cả Slim và Alpine variants
 - Build cho 2 platforms: `linux/amd64` và `linux/arm64`
-- Test images sau khi build
-- Upload artifacts
+- Push images lên GitHub Container Registry (ghcr.io)
+- Test images sau khi push
+- Tạo GitHub Release (khi push tag)
 - Generate build summary
 
-**Artifacts:**
-- `docker-image-slim-*`: Slim variant images
-- `docker-image-alpine-*`: Alpine variant images
-- Retention: 1 day
+**Registry:**
+- Images được push lên: `ghcr.io/OWNER/REPO`
+- Public access (có thể pull mà không cần authentication)
 
-### 2. Docker Test (`docker-test.yml`)
-
-**Trigger:**
-- Pull requests thay đổi:
-  - Dockerfile*
-  - docker-compose*.yml
-  - requirements.txt
-  - *.py files
-  - workflow files
-
-**Chức năng:**
-- Quick build test chỉ cho amd64
-- Test import các modules chính
-- So sánh kích thước images
-- Nhanh hơn full build
-
-### 3. Docker Release (`docker-release.yml`)
-
-**Trigger:**
-- Push tags `v*.*.*` (semantic versioning)
-- Manual dispatch với version input
-
-**Chức năng:**
-- Build multi-arch images cho release
-- Tạo GitHub Release với artifacts
-- Upload OCI image archives
-- Generate release notes
-- Retention: 30 days
-
-**Release Artifacts:**
-- `docker-image-slim-v*.tar`: Slim variant OCI archive
-- `docker-image-alpine-v*.tar`: Alpine variant OCI archive
-
-### 4. Docker Security (`docker-security.yml`)
-
-**Trigger:**
-- Push to `main` (Dockerfile hoặc requirements.txt thay đổi)
-- Pull requests
-- Weekly schedule (Monday 00:00 UTC)
-- Manual dispatch
-
-**Chức năng:**
-- Scan vulnerabilities với Trivy
-- Upload results to GitHub Security tab
-- Check CRITICAL và HIGH severity issues
-- Generate security summary
+**Tags:**
+- Branch builds: `main-slim`, `main-alpine`, `develop-slim`, `develop-alpine`
+- Version builds: `v1.0.0-slim`, `v1.0.0-alpine`, `v1.0-slim`, `v1-slim`
+- Latest: `latest-slim`, `latest-alpine` (từ main branch)
 
 ## 🚀 Cách sử dụng
 
@@ -79,55 +37,43 @@ Trigger manual build:
 
 ```bash
 # Via GitHub UI
-Actions → Docker Build → Run workflow
+Actions → Build and Push Docker Images → Run workflow
 
 # Via GitHub CLI
-gh workflow run docker-build.yml
+gh workflow run docker-release.yml
 ```
 
 ### Tạo Release
 
-1. **Tự động** - Push tag:
+**Push tag để trigger release:**
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-2. **Thủ công** - Via GitHub UI:
-```
-Actions → Build Release Images → Run workflow
-Input version: v1.0.0
-```
+Workflow sẽ tự động:
+1. Build multi-arch images
+2. Push lên GHCR với version tags
+3. Tạo GitHub Release với release notes
 
-### Download Artifacts
-
-**Via GitHub UI:**
-1. Go to Actions tab
-2. Click on workflow run
-3. Scroll to Artifacts section
-4. Download desired artifact
-
-**Via GitHub CLI:**
-```bash
-# List artifacts
-gh run list --workflow=docker-build.yml
-
-# Download artifact
-gh run download <run-id>
-```
-
-### Load Downloaded Images
+### Pull Images từ GHCR
 
 ```bash
-# Extract artifact
-unzip docker-image-slim-*.zip
+# Pull latest Slim version
+docker pull ghcr.io/OWNER/REPO:latest-slim
 
-# Load image
-docker load < docker-image-slim-*.tar
+# Pull latest Alpine version (recommended)
+docker pull ghcr.io/OWNER/REPO:latest-alpine
 
-# Verify
-docker images mcp-xiaozhi-vietnam
+# Pull specific version
+docker pull ghcr.io/OWNER/REPO:v1.0.0-alpine
+
+# Pull from specific branch
+docker pull ghcr.io/OWNER/REPO:main-alpine
+docker pull ghcr.io/OWNER/REPO:develop-alpine
 ```
+
+Xem thêm chi tiết tại [GHCR.md](../../GHCR.md)
 
 ## 🏗️ Build Matrix
 
@@ -145,26 +91,27 @@ docker images mcp-xiaozhi-vietnam
 | Slim | Dockerfile | python:3.12-slim | ~150-200MB |
 | Alpine | Dockerfile.alpine | python:3.12-alpine | ~50-80MB |
 
-## 📊 Workflow Status Badges
+## 📊 Workflow Status Badge
 
 Add to README.md:
 
 ```markdown
-![Docker Build](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/docker-build.yml/badge.svg)
-![Docker Security](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/docker-security.yml/badge.svg)
+![Docker Build](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/docker-release.yml/badge.svg)
 ```
 
 ## 🔧 Configuration
 
 ### Secrets Required
 
-Không cần secrets cho build cơ bản. Chỉ cần `GITHUB_TOKEN` (tự động có).
+- `GITHUB_TOKEN`: Tự động có sẵn, dùng để push lên GHCR
+- Không cần thêm secrets khác
 
 ### Environment Variables
 
 ```yaml
 env:
-  IMAGE_NAME: mcp-xiaozhi-vietnam
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}  # Tự động: owner/repo
 ```
 
 ### Cache
@@ -213,18 +160,7 @@ cache-from: type=gha,scope=${{ github.ref_name }}
 cache-to: type=gha,mode=max,scope=${{ github.ref_name }}
 ```
 
-### Security scan fails
 
-**Vấn đề:** Trivy scan timeout hoặc fail
-
-**Giải pháp:**
-```yaml
-- name: Run Trivy
-  uses: aquasecurity/trivy-action@master
-  with:
-    timeout: 10m
-    ignore-unfixed: true
-```
 
 ## 📈 Performance Tips
 
@@ -251,20 +187,9 @@ on:
       - '*.py'
 ```
 
-## 🔒 Security Best Practices
+## 🔒 Security
 
-### 1. Scan regularly
-
-Security workflow chạy weekly để phát hiện vulnerabilities mới.
-
-### 2. Review scan results
-
-Check Security tab thường xuyên:
-```
-Repository → Security → Code scanning alerts
-```
-
-### 3. Update dependencies
+### Update dependencies
 
 ```bash
 # Update Python packages
@@ -275,7 +200,7 @@ pip install --upgrade package_name
 # Edit Dockerfile: FROM python:3.12-slim
 ```
 
-### 4. Pin versions
+### Pin versions
 
 ```dockerfile
 # Good - pinned version
@@ -289,8 +214,9 @@ FROM python:3.12.1-slim@sha256:abc123...
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [Docker Build Push Action](https://github.com/docker/build-push-action)
-- [Trivy Security Scanner](https://github.com/aquasecurity/trivy)
+- [GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
 - [Multi-platform builds](https://docs.docker.com/build/building/multi-platform/)
+- [GHCR Guide](../../GHCR.md)
 
 ## 🤝 Contributing
 

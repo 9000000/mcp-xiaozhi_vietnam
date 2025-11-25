@@ -1,7 +1,6 @@
 # VnExpress Tool - Công cụ Tin tức MCP
 
-[![Docker Build](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/docker-build.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/docker-build.yml)
-[![Docker Security](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/docker-security.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/docker-security.yml)
+[![Docker Build](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/docker-release.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/docker-release.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Công cụ MCP để lấy tin tức mới nhất từ VnExpress.net và các chức năng tìm kiếm tin tức.
@@ -135,18 +134,32 @@ make compare
 📖 **Xem thêm**: [OPTIMIZATION.md](OPTIMIZATION.md) để biết chi tiết về tối ưu hóa
 
 📖 **Xem thêm**: 
+- [GHCR.md](GHCR.md) - Sử dụng images từ GitHub Container Registry
 - [DOCKER.md](DOCKER.md) - Chi tiết về Docker deployment
 - [OPTIMIZATION.md](OPTIMIZATION.md) - Tối ưu hóa Docker image
 - [.github/workflows/README.md](.github/workflows/README.md) - CI/CD workflows
 
 ## 🔄 CI/CD
 
-Dự án sử dụng GitHub Actions để tự động build và test Docker images:
+Dự án sử dụng GitHub Actions để tự động build và push Docker images lên GitHub Container Registry (GHCR):
 
 - **Multi-arch builds**: Tự động build cho amd64 và arm64
-- **Security scanning**: Scan vulnerabilities với Trivy
-- **Release automation**: Tự động tạo release khi push tag
-- **Artifacts**: Download pre-built images từ GitHub Actions
+- **GitHub Container Registry**: Images được push lên ghcr.io
+- **Auto-deploy**: Tự động push khi commit vào main/develop
+- **Release automation**: Tự động tạo release và push images khi push tag
+
+### 📦 Pull Images từ GHCR
+
+```bash
+# Slim version
+docker pull ghcr.io/YOUR_USERNAME/YOUR_REPO:latest-slim
+
+# Alpine version (recommended)
+docker pull ghcr.io/YOUR_USERNAME/YOUR_REPO:latest-alpine
+
+# Specific version
+docker pull ghcr.io/YOUR_USERNAME/YOUR_REPO:v1.0.0-alpine
+```
 
 Xem chi tiết tại [Workflows Documentation](.github/workflows/README.md)
 
