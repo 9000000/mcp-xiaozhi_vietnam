@@ -10,12 +10,10 @@ services:
       dockerfile: Dockerfile
     container_name: mcp-xiaozhi-vietnam
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
       - PYTHONUNBUFFERED=1
-      # Token được load từ .env file
-      - MCP_ENDPOINT=${MCP_ENDPOINT}
+      # Nhập token trực tiếp ở đây
+      - MCP_ENDPOINT=your_token_here
       # Optional: Uncomment nếu sử dụng mp3-proxy
       # - MP3_PROXY_URL=http://mp3-proxy:5005
       # Optional: Uncomment nếu sử dụng invidious-proxy
