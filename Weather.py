@@ -3,6 +3,7 @@ import sys
 import logging
 import requests
 import json
+import os
 from datetime import datetime
 
 logger = logging.getLogger('Weather')
@@ -21,7 +22,7 @@ def get_weather(city: str, country_code: str = "VN") -> dict:
     try:
         # Sử dụng OpenWeatherMap API (miễn phí)
         # Bạn cần đăng ký tại: https://openweathermap.org/api
-        api_key = "YOUR_API_KEY_HERE"  # Thay bằng API key thực tế
+        api_key = os.getenv("OPENWEATHER_API_KEY")
         
         # API endpoint
         url = f"http://api.openweathermap.org/data/2.5/weather"
@@ -75,7 +76,7 @@ def get_weather(city: str, country_code: str = "VN") -> dict:
 def get_weather_forecast(city: str, country_code: str = "VN", days: int = 3) -> dict:
     """Get weather forecast for multiple days (1-5 days)."""
     try:
-        api_key = "YOUR_API_KEY_HERE"  # Thay bằng API key thực tế
+        api_key = os.getenv("OPENWEATHER_API_KEY", "YOUR_API_KEY_HERE")
         
         url = f"http://api.openweathermap.org/data/2.5/forecast"
         params = {
