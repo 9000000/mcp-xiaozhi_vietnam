@@ -4,6 +4,34 @@
       "command": "python",
       "args": ["calculator.py"],
       "type": "stdio"
+    },
+    "VnExpress": {
+      "command": "python",
+      "args": ["VnExpress.py"],
+      "type": "stdio"
+    },
+    "dantri_news": {
+      "command": "python",
+      "args": ["dantri_news.py"],
+      "type": "stdio"
+    },
+    "radio": {
+      "command": "python",
+      "args": ["radio.py"],
+      "type": "stdio"
+
+    },
+    "invidious": {
+      "command": "python",
+      "args": ["invidious_mcp.py"],
+      "type": "stdio"
+
+    },
+    "news": {
+      "command": "python",
+      "args": ["news.py"],
+      "type": "stdio"
+
     }
   }
 }

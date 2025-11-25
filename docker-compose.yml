@@ -1,5 +1,8 @@
 version: '3.8'
 
+# Load environment variables from .env file
+# Make sure .env file exists with MCP_ENDPOINT
+
 services:
   mcp-servers:
     build:
@@ -7,10 +10,12 @@ services:
       dockerfile: Dockerfile
     container_name: mcp-xiaozhi-vietnam
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
-      # Thay YOUR_TOKEN_HERE bằng token thực tế của bạn
-      - MCP_ENDPOINT=${MCP_ENDPOINT:-wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN_HERE}
+      # Token được load từ .env file
+      - MCP_ENDPOINT=${MCP_ENDPOINT}
       # Optional: Uncomment nếu sử dụng mp3-proxy
       # - MP3_PROXY_URL=http://mp3-proxy:5005
       # Optional: Uncomment nếu sử dụng invidious-proxy

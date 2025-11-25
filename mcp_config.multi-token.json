@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "calculator": {
+      "command": "python",
+      "args": ["calculator.py"],
+      "type": "stdio",
+      "env": {
+        "MCP_ENDPOINT": "wss://api.xiaozhi.me/mcp/?token=TOKEN_1"
+      }
+    },
+    "VnExpress": {
+      "command": "python",
+      "args": ["VnExpress.py"],
+      "type": "stdio",
+      "env": {
+        "MCP_ENDPOINT": "wss://api.xiaozhi.me/mcp/?token=TOKEN_2"
+      }
+    },
+    "dantri_news": {
+      "command": "python",
+      "args": ["dantri_news.py"],
+      "type": "stdio",
+      "env": {
+        "MCP_ENDPOINT": "wss://api.xiaozhi.me/mcp/?token=TOKEN_3"
+      }
+    }
+  }
+}
