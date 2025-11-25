@@ -174,11 +174,57 @@ docker-compose logs mcp-servers
 docker-compose ps
 ```
 
-### 2. Lỗi kết nối WebSocket
+### 2. Lỗi WebSocket 4004 Internal Server Error
 
-- Kiểm tra biến `MCP_ENDPOINT` trong `docker-compose.yml` hoặc biến môi trường
-- Đảm bảo token còn hạn
-- Kiểm tra kết nối internet
+**Triệu chứng:**
+```
+ERROR - [server] received 4004 (private use) Internal server error
+WARNING - [server] Connection closed (attempt X)
+```
+
+**Nguyên nhân:**
+- Token hết hạn hoặc không hợp lệ
+- Server giới hạn số connections (quá nhiều servers chạy cùng lúc)
+- Rate limiting từ server
+
+**Giải pháp:**
+
+1. **Kiểm tra token:**
+```bash
+# Xem token trong container
+docker-compose exec mcp-servers env | grep MCP_ENDPOINT
+```
+
+2. **Giảm số servers:**
+Chỉnh sửa `mcp_config.json` để chỉ chạy 1-2 servers:
+```json
+{
+  "mcpServers": {
+    "calculator": {
+      "command": "python",
+      "args": ["calculator.py"],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+3. **Lấy token mới:**
+- Truy cập https://xiaozhi.me
+- Lấy token mới
+- Cập nhật trong `docker-compose.yml`
+
+4. **Đợi và thử lại:**
+```bash
+# Stop container
+docker-compose down
+
+# Đợi 5-10 phút
+# Restart
+docker-compose up -d
+```
+
+### 3. Lỗi kết nối mạng
 
 ```bash
 # Kiểm tra biến môi trường trong container
@@ -186,6 +232,9 @@ docker-compose exec mcp-servers env | grep MCP_ENDPOINT
 
 # Test kết nối từ trong container
 docker-compose exec mcp-servers ping -c 3 api.xiaozhi.me
+
+# Test DNS resolution
+docker-compose exec mcp-servers nslookup api.xiaozhi.me
 ```
 
 ### 3. Module không tìm thấy

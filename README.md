@@ -139,6 +139,18 @@ make compare
 - [OPTIMIZATION.md](OPTIMIZATION.md) - Tối ưu hóa Docker image
 - [.github/workflows/README.md](.github/workflows/README.md) - CI/CD workflows
 
+## ⚠️ Lưu ý quan trọng
+
+### Lỗi WebSocket 4004
+
+Nếu gặp lỗi `4004 Internal server error`:
+
+1. **Token hết hạn** - Lấy token mới từ https://xiaozhi.me
+2. **Quá nhiều servers** - Chỉ chạy 1-2 servers trong `mcp_config.json`
+3. **Rate limiting** - Đợi 5-10 phút rồi thử lại
+
+Xem chi tiết: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+
 ## 🔄 CI/CD
 
 Dự án sử dụng GitHub Actions để tự động build và push Docker images lên GitHub Container Registry (GHCR):
