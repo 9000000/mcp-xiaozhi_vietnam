@@ -2,7 +2,6 @@ from fastmcp import FastMCP
 import sys
 import logging
 import requests
-import json
 import os
 from datetime import datetime
 
@@ -23,6 +22,8 @@ def get_weather(city: str, country_code: str = "VN") -> dict:
         # Sử dụng OpenWeatherMap API (miễn phí)
         # Bạn cần đăng ký tại: https://openweathermap.org/api
         api_key = os.getenv("OPENWEATHER_API_KEY")
+        if not api_key:
+            return {"success": False, "error": "OPENWEATHER_API_KEY not configured"}
         
         # API endpoint
         url = f"http://api.openweathermap.org/data/2.5/weather"
@@ -76,7 +77,9 @@ def get_weather(city: str, country_code: str = "VN") -> dict:
 def get_weather_forecast(city: str, country_code: str = "VN", days: int = 3) -> dict:
     """Get weather forecast for multiple days (1-5 days)."""
     try:
-        api_key = os.getenv("OPENWEATHER_API_KEY", "YOUR_API_KEY_HERE")
+        api_key = os.getenv("OPENWEATHER_API_KEY")
+        if not api_key:
+            return {"success": False, "error": "OPENWEATHER_API_KEY not configured"}
         
         url = f"http://api.openweathermap.org/data/2.5/forecast"
         params = {
@@ -113,9 +116,15 @@ def get_weather_forecast(city: str, country_code: str = "VN", days: int = 3) -> 
             "message": f"{days}-day forecast for {data['city']['name']}"
         }
         
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Network error: {e}")
+        return {"success": False, "error": f"Network error: {str(e)}"}
+    except KeyError as e:
+        logger.error(f"Data parsing error: {e}")
+        return {"success": False, "error": f"Invalid response format: {str(e)}"}
     except Exception as e:
-        logger.error(f"Forecast error: {e}")
-        return {"success": False, "error": str(e)}
+        logger.error(f"Unexpected error: {e}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 # Start the server
 if __name__ == "__main__":
