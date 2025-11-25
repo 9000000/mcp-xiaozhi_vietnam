@@ -1,5 +1,9 @@
 # VnExpress Tool - Công cụ Tin tức MCP
 
+[![Docker Build](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/docker-build.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/docker-build.yml)
+[![Docker Security](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/docker-security.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/docker-security.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Công cụ MCP để lấy tin tức mới nhất từ VnExpress.net và các chức năng tìm kiếm tin tức.
 
 ## Tổng quan
@@ -133,6 +137,18 @@ make compare
 📖 **Xem thêm**: 
 - [DOCKER.md](DOCKER.md) - Chi tiết về Docker deployment
 - [OPTIMIZATION.md](OPTIMIZATION.md) - Tối ưu hóa Docker image
+- [.github/workflows/README.md](.github/workflows/README.md) - CI/CD workflows
+
+## 🔄 CI/CD
+
+Dự án sử dụng GitHub Actions để tự động build và test Docker images:
+
+- **Multi-arch builds**: Tự động build cho amd64 và arm64
+- **Security scanning**: Scan vulnerabilities với Trivy
+- **Release automation**: Tự động tạo release khi push tag
+- **Artifacts**: Download pre-built images từ GitHub Actions
+
+Xem chi tiết tại [Workflows Documentation](.github/workflows/README.md)
 
 ### 💻 Cài đặt trực tiếp
 

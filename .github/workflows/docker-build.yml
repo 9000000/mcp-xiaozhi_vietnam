@@ -1,0 +1,190 @@
+name: Build Docker Images
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: mcp-xiaozhi-vietnam
+
+jobs:
+  build-slim:
+    name: Build Slim Image (Multi-arch)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata
+        id: meta
+        run: |
+          echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+
+      - name: Build Slim image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: false
+          tags: |
+            ${{ env.IMAGE_NAME }}:slim-${{ steps.meta.outputs.sha_short }}
+            ${{ env.IMAGE_NAME }}:slim-latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/image-slim-${{ matrix.platform }}.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-slim-${{ strategy.job-index }}
+          path: /tmp/image-slim-${{ matrix.platform }}.tar
+          retention-days: 1
+
+  build-alpine:
+    name: Build Alpine Image (Multi-arch)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata
+        id: meta
+        run: |
+          echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+
+      - name: Build Alpine image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.alpine
+          platforms: ${{ matrix.platform }}
+          push: false
+          tags: |
+            ${{ env.IMAGE_NAME }}:alpine-${{ steps.meta.outputs.sha_short }}
+            ${{ env.IMAGE_NAME }}:alpine-latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/image-alpine-${{ matrix.platform }}.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-alpine-${{ strategy.job-index }}
+          path: /tmp/image-alpine-${{ matrix.platform }}.tar
+          retention-days: 1
+
+  test-images:
+    name: Test Docker Images
+    needs: [build-slim, build-alpine]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Slim artifact (amd64)
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image-slim-0
+          path: /tmp
+
+      - name: Download Alpine artifact (amd64)
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image-alpine-0
+          path: /tmp
+
+      - name: Load Slim image
+        run: |
+          docker load --input /tmp/image-slim-linux/amd64.tar
+          docker images
+
+      - name: Load Alpine image
+        run: |
+          docker load --input /tmp/image-alpine-linux/amd64.tar
+          docker images
+
+      - name: Test Slim image
+        run: |
+          docker run --rm ${{ env.IMAGE_NAME }}:slim-latest python --version
+          docker run --rm ${{ env.IMAGE_NAME }}:slim-latest python -c "import sys; print('Python test passed')"
+
+      - name: Test Alpine image
+        run: |
+          docker run --rm ${{ env.IMAGE_NAME }}:alpine-latest python --version
+          docker run --rm ${{ env.IMAGE_NAME }}:alpine-latest python -c "import sys; print('Python test passed')"
+
+      - name: Check image sizes
+        run: |
+          echo "=== Image Sizes ==="
+          docker images ${{ env.IMAGE_NAME }} --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+
+  build-summary:
+    name: Build Summary
+    needs: [build-slim, build-alpine, test-images]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/artifacts
+
+      - name: Generate build summary
+        run: |
+          echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Build Status" >> $GITHUB_STEP_SUMMARY
+          echo "- **Slim Image**: Built for amd64 and arm64" >> $GITHUB_STEP_SUMMARY
+          echo "- **Alpine Image**: Built for amd64 and arm64" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "Docker images are available as workflow artifacts." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🏗️ Platforms" >> $GITHUB_STEP_SUMMARY
+          echo "- linux/amd64 (x86_64)" >> $GITHUB_STEP_SUMMARY
+          echo "- linux/arm64 (ARM64/aarch64)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Image Variants" >> $GITHUB_STEP_SUMMARY
+          echo "| Variant | Base | Estimated Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|------|----------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Slim | python:3.12-slim | ~150-200MB |" >> $GITHUB_STEP_SUMMARY
+          echo "| Alpine | python:3.12-alpine | ~50-80MB |" >> $GITHUB_STEP_SUMMARY

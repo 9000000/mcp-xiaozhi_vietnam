@@ -1,0 +1,181 @@
+name: Build Release Images
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  IMAGE_NAME: mcp-xiaozhi-vietnam
+
+jobs:
+  build-multiarch:
+    name: Build Multi-arch Images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        variant: [slim, alpine]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=${GITHUB_REF#refs/tags/}
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version_short=${VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Set Dockerfile
+        id: dockerfile
+        run: |
+          if [ "${{ matrix.variant }}" = "alpine" ]; then
+            echo "file=Dockerfile.alpine" >> $GITHUB_OUTPUT
+          else
+            echo "file=Dockerfile" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build multi-arch image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./${{ steps.dockerfile.outputs.file }}
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ matrix.variant }}-${{ steps.version.outputs.version }}
+            ${{ env.IMAGE_NAME }}:${{ matrix.variant }}-latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=oci,dest=/tmp/${{ matrix.variant }}-${{ steps.version.outputs.version }}.tar
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-${{ matrix.variant }}-${{ steps.version.outputs.version }}
+          path: /tmp/${{ matrix.variant }}-${{ steps.version.outputs.version }}.tar
+          retention-days: 30
+
+  create-release:
+    name: Create Release
+    needs: build-multiarch
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Generate release notes
+        run: |
+          cat > release-notes.md << 'EOF'
+          ## 🐳 Docker Images
+          
+          Multi-architecture Docker images for amd64 and arm64.
+          
+          ### 📦 Available Variants
+          
+          - **Slim** (Debian-based): ~150-200MB
+            - Better compatibility
+            - Recommended for development
+          
+          - **Alpine** (Alpine Linux): ~50-80MB
+            - Smallest size
+            - Recommended for production
+          
+          ### 🏗️ Supported Platforms
+          
+          - linux/amd64 (x86_64)
+          - linux/arm64 (ARM64/aarch64)
+          
+          ### 📥 Download
+          
+          Download the OCI image archives from the artifacts below and load them:
+          
+          ```bash
+          # Load Slim image
+          docker load < docker-image-slim-${{ steps.version.outputs.version }}.tar
+          
+          # Load Alpine image
+          docker load < docker-image-alpine-${{ steps.version.outputs.version }}.tar
+          ```
+          
+          ### 🚀 Usage
+          
+          ```bash
+          # Run Slim version
+          docker run --rm -e MCP_ENDPOINT="wss://..." mcp-xiaozhi-vietnam:slim-latest
+          
+          # Run Alpine version
+          docker run --rm -e MCP_ENDPOINT="wss://..." mcp-xiaozhi-vietnam:alpine-latest
+          ```
+          
+          ### 📖 Documentation
+          
+          - [Docker Guide](DOCKER.md)
+          - [Optimization Guide](OPTIMIZATION.md)
+          - [README](README.md)
+          EOF
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./artifacts/**/*.tar
+          body_path: release-notes.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-summary:
+    name: Build Summary
+    needs: build-multiarch
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 🎉 Release Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Built Images" >> $GITHUB_STEP_SUMMARY
+          echo "- Slim (Debian): amd64, arm64" >> $GITHUB_STEP_SUMMARY
+          echo "- Alpine (Linux): amd64, arm64" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "OCI image archives are available in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 How to Use" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "# Download artifact and load" >> $GITHUB_STEP_SUMMARY
+          echo "docker load < docker-image-slim-*.tar" >> $GITHUB_STEP_SUMMARY
+          echo "docker load < docker-image-alpine-*.tar" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
