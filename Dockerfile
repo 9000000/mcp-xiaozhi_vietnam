@@ -40,7 +40,6 @@ COPY --from=builder /root/.local /home/appuser/.local
 COPY mcp_pipe.py .
 COPY mcp_config.json .
 COPY *.py ./
-COPY docs/ ./docs/
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && \

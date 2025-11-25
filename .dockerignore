@@ -60,8 +60,7 @@ docker-compose*.yml
 README*
 LICENSE
 CHANGELOG*
-docs/readme*.md
-docs/*.md
+docs/
 
 # OS files
 .DS_Store

@@ -9,11 +9,6 @@
       "command": "python",
       "args": ["VnExpress.py"],
       "type": "stdio"
-    },
-    "dantri_news": {
-      "command": "python",
-      "args": ["dantri_news.py"],
-      "type": "stdio"
     }
   }
 }
