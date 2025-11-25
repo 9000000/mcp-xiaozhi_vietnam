@@ -18,23 +18,20 @@
     "radio": {
       "command": "python",
       "args": ["radio.py"],
-      "type": "stdio"
+      "type": "stdio",
       "disabled": "true"
-
     },
     "invidious": {
       "command": "python",
       "args": ["invidious_mcp.py"],
-      "type": "stdio"
+      "type": "stdio",
       "disabled": "true"
-
     },
     "news": {
       "command": "python",
       "args": ["news.py"],
-      "type": "stdio"
+      "type": "stdio",
       "disabled": "true"
-
     }
   }
 }

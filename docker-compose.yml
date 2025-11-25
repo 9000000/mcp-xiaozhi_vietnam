@@ -18,9 +18,9 @@ services:
       # - MP3_PROXY_URL=http://mp3-proxy:5005
       # Optional: Uncomment nếu sử dụng invidious-proxy
       # - INVIDIOUS_PROXY=http://invidious-proxy:5006
-    volumes:
+    # volumes:
       # Mount source code for development (optional, comment out for production)
-      - ./:/app
+      # - ./:/app
     networks:
       - mcp-network
     logging:
