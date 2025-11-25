@@ -57,19 +57,33 @@ FROM python:3.12-slim
 - Giảm 30-50% kích thước
 - Tăng bảo mật (ít tools hơn)
 
-### 2. .dockerignore
+### 2. .dockerignore (Đã tối ưu)
 
 Loại bỏ các file không cần thiết:
-- Documentation (*.md)
-- Tests
-- Git files
-- IDE configs
-- Cache files
+- Python cache (`__pycache__/`, `*.pyc`)
+- Virtual environments (`venv/`, `.venv/`)
+- IDE configs (`.vscode/`, `.idea/`)
+- Git files (`.git/`, `.github/`)
+- Documentation (`*.md`, `docs/`)
+- Docker files (`Dockerfile*`, `docker-compose*.yml`)
+- Scripts (`setup.sh`, `*.ps1`)
+- Tests (`test_*.py`, `.pytest_cache/`)
+- Environment files (`.env`)
+- Temporary files (`*.tmp`, `*.bak`)
 
 **Lợi ích:**
-- Build context nhỏ hơn
-- Build nhanh hơn
-- Image sạch hơn
+- Build context nhỏ hơn (~90% reduction)
+- Build nhanh hơn (ít files để copy)
+- Image sạch hơn (chỉ có code cần thiết)
+
+**Kiểm tra:**
+```bash
+# Linux/macOS
+./check-build-context.sh
+
+# Windows
+.\check-build-context.ps1
+```
 
 ### 3. Layer Caching
 

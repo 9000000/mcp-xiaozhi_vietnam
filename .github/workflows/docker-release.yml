@@ -18,14 +18,11 @@ env:
 
 jobs:
   build-and-push-release:
-    name: Build and Push Release Images
+    name: Build and Push Alpine Image
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
-    strategy:
-      matrix:
-        variant: [slim, alpine]
     
     steps:
       - name: Checkout code
@@ -60,30 +57,22 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          flavor: |
-            suffix=-${{ matrix.variant }},onlatest=true
           tags: |
+            type=ref,event=branch
+            type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=raw,value=latest
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Set Dockerfile
-        id: dockerfile
-        run: |
-          if [ "${{ matrix.variant }}" = "alpine" ]; then
-            echo "file=Dockerfile.alpine" >> $GITHUB_OUTPUT
-          else
-            echo "file=Dockerfile" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Build and push
+      - name: Build and push Alpine image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./${{ steps.dockerfile.outputs.file }}
+          file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -110,23 +99,25 @@ jobs:
       - name: Generate release notes
         run: |
           cat > release-notes.md << 'EOF'
-          ## 🐳 Docker Images
+          ## 🐳 Docker Image
           
-          Multi-architecture Docker images available on GitHub Container Registry.
+          Multi-architecture Alpine Linux Docker image available on GitHub Container Registry.
           
-          ### 📦 Available Variants
+          ### 📦 Pull Image
           
-          **Slim (Debian-based)**: ~150-200MB
           ```bash
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-slim
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-slim
+          # Latest version
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          
+          # Specific version
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
           ```
           
-          **Alpine (Alpine Linux)**: ~50-80MB
-          ```bash
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-alpine
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-alpine
-          ```
+          ### 📊 Image Info
+          
+          - **Base:** Alpine Linux (python:3.12-alpine)
+          - **Size:** ~50-80MB
+          - **Platforms:** linux/amd64, linux/arm64
           
           ### 🏗️ Supported Platforms
           
@@ -136,13 +127,14 @@ jobs:
           ### 🚀 Quick Start
           
           ```bash
-          # Pull and run Slim version
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-slim
-          docker run --rm -e MCP_ENDPOINT="wss://..." ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-slim
+          # Pull image
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
           
-          # Pull and run Alpine version (recommended for production)
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-alpine
-          docker run --rm -e MCP_ENDPOINT="wss://..." ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-alpine
+          # Run
+          docker run --rm -e MCP_ENDPOINT="wss://..." ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          
+          # Or with docker-compose
+          docker-compose up -d
           ```
           
           ### 📖 Documentation
@@ -176,16 +168,18 @@ jobs:
         run: |
           echo "## 🎉 Release ${{ github.ref_name }} Published" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ✅ Images Pushed to GHCR" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Alpine Image Pushed to GHCR" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Variant | Tag | Pull Command |" >> $GITHUB_STEP_SUMMARY
-          echo "|---------|-----|--------------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Slim | ${{ github.ref_name }}-slim | \`docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-slim\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Alpine | ${{ github.ref_name }}-alpine | \`docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-alpine\` |" >> $GITHUB_STEP_SUMMARY
+          echo "**Pull command:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🏗️ Platforms" >> $GITHUB_STEP_SUMMARY
-          echo "- linux/amd64 (x86_64)" >> $GITHUB_STEP_SUMMARY
-          echo "- linux/arm64 (ARM64/aarch64)" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Image Info" >> $GITHUB_STEP_SUMMARY
+          echo "- **Base:** Alpine Linux" >> $GITHUB_STEP_SUMMARY
+          echo "- **Size:** ~50-80MB" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platforms:** linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
           echo "- [View on GHCR](https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }})" >> $GITHUB_STEP_SUMMARY

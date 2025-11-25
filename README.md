@@ -163,14 +163,11 @@ Dự án sử dụng GitHub Actions để tự động build và push Docker ima
 ### 📦 Pull Images từ GHCR
 
 ```bash
-# Slim version
-docker pull ghcr.io/YOUR_USERNAME/YOUR_REPO:latest-slim
-
-# Alpine version (recommended)
-docker pull ghcr.io/YOUR_USERNAME/YOUR_REPO:latest-alpine
+# Latest version (Alpine Linux)
+docker pull ghcr.io/YOUR_USERNAME/YOUR_REPO:latest
 
 # Specific version
-docker pull ghcr.io/YOUR_USERNAME/YOUR_REPO:v1.0.0-alpine
+docker pull ghcr.io/YOUR_USERNAME/YOUR_REPO:v1.0.0
 ```
 
 Xem chi tiết tại [Workflows Documentation](.github/workflows/README.md)

@@ -1,48 +1,27 @@
-# Python cache and compiled files
+# Python cache
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
 *.pyc
+*.pyo
+*.pyd
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
+*.so
 *.egg
-MANIFEST
+*.egg-info/
+dist/
+build/
 
 # Virtual environments
 venv/
-ENV/
 env/
-.venv
-env.bak/
-venv.bak/
+.venv/
+ENV/
 
-# IDE and editors
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-.project
-.pydevproject
-.settings/
-*.sublime-project
-*.sublime-workspace
 
 # Git
 .git/
@@ -50,72 +29,55 @@ venv.bak/
 .gitattributes
 .github/
 
-# Docker files (don't copy into image)
+# Docker files
 Dockerfile*
 docker-compose*.yml
 .dockerignore
 
-# Documentation (not needed in runtime)
+# Documentation
 *.md
-README*
-LICENSE
-CHANGELOG*
 docs/
+LICENSE
 
 # OS files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 desktop.ini
 
-# Logs and databases
+# Logs
 *.log
-*.sql
-*.sqlite
-*.db
 
-# Test files
+# Tests
 tests/
 test_*.py
 *_test.py
 .pytest_cache/
 .coverage
-htmlcov/
-.tox/
-.nox/
 
-# CI/CD
-.travis.yml
-.gitlab-ci.yml
-.circleci/
-azure-pipelines.yml
-
-# Environment files (use docker-compose env instead)
+# Environment files
 .env
 .env.*
-!.env.example
 
-# Backup files
-*.bak
-*.backup
-*.old
-*.orig
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-
-# Setup scripts (not needed in container)
+# Scripts not needed in container
 setup.sh
 setup.ps1
 Makefile
+verify-*.ps1
+quick-test.ps1
+debug-*.ps1
+test-*.ps1
+mcp_multiplexer.py
+mcp_sequential.py
 
-# Sample/example files
+# Config examples
 *.sample
-*example*
-!.env.example
+*.example
+*.minimal.json
+mcp_config.multi-token.json
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+tmp/
+temp/
