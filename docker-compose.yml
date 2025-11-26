@@ -1,8 +1,5 @@
 version: '3.8'
 
-# Load environment variables from .env file
-# Make sure .env file exists with MCP_ENDPOINT
-
 services:
   mcp-servers:
     build:
@@ -12,10 +9,10 @@ services:
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
-      # Nhập token trực tiếp ở đây
-      - MCP_ENDPOINT=your_token_here
-      # OpenWeather API Key
-      - OPENWEATHER_API_KEY=your_openweather_api_key_here
+      # Nhập MCP endpoint token trực tiếp ở đây
+      - MCP_ENDPOINT=wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN_HERE
+      # OpenWeather API Key (tùy chọn)
+      - OPENWEATHER_API_KEY=
       # Optional: Uncomment nếu sử dụng mp3-proxy
       # - MP3_PROXY_URL=http://mp3-proxy:5005
       # Optional: Uncomment nếu sử dụng invidious-proxy

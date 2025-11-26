@@ -18,7 +18,7 @@ env:
 
 jobs:
   build-and-push-release:
-    name: Build and Push Alpine Image
+    name: Build and Push Slim Image
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -66,7 +66,7 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push Alpine image
+      - name: Build and push Slim image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -101,7 +101,7 @@ jobs:
           cat > release-notes.md << 'EOF'
           ## 🐳 Docker Image
           
-          Multi-architecture Alpine Linux Docker image available on GitHub Container Registry.
+          Multi-architecture Python Slim Docker image available on GitHub Container Registry.
           
           ### 📦 Pull Image
           
@@ -115,8 +115,8 @@ jobs:
           
           ### 📊 Image Info
           
-          - **Base:** Alpine Linux (python:3.12-alpine)
-          - **Size:** ~50-80MB
+          - **Base:** Python Slim (python:3.12-slim)
+          - **Size:** ~150-200MB
           - **Platforms:** linux/amd64, linux/arm64
           
           ### 🏗️ Supported Platforms
@@ -168,7 +168,7 @@ jobs:
         run: |
           echo "## 🎉 Release ${{ github.ref_name }} Published" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ✅ Alpine Image Pushed to GHCR" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Slim Image Pushed to GHCR" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Pull command:**" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
@@ -177,8 +177,8 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Image Info" >> $GITHUB_STEP_SUMMARY
-          echo "- **Base:** Alpine Linux" >> $GITHUB_STEP_SUMMARY
-          echo "- **Size:** ~50-80MB" >> $GITHUB_STEP_SUMMARY
+          echo "- **Base:** Python Slim" >> $GITHUB_STEP_SUMMARY
+          echo "- **Size:** ~150-200MB" >> $GITHUB_STEP_SUMMARY
           echo "- **Platforms:** linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
