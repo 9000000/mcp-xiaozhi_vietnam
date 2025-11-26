@@ -1,41 +1,34 @@
-# Multi-architecture Alpine Linux Docker image
-# Optimized for minimal size (~50-80MB)
+# Multi-stage Dockerfile with Python Slim
+# Optimized for size and performance (~150-200MB)
 
 # Stage 1: Builder
-FROM python:3.12-alpine AS builder
+FROM python:3.12-slim AS builder
 
-WORKDIR /app
+WORKDIR /build
 
 # Install build dependencies
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    musl-dev \
-    libffi-dev \
-    openssl-dev
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --user --no-cache-dir --no-warn-script-location -r requirements.txt
+# Install Python dependencies to a specific location
+RUN pip install --prefix=/install --no-cache-dir --no-warn-script-location -r requirements.txt
 
 # Stage 2: Runtime
-FROM python:3.12-alpine
+FROM python:3.12-slim
 
 WORKDIR /app
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH=/home/appuser/.local/bin:$PATH
-
-# Install runtime dependencies only
-RUN apk add --no-cache \
-    libffi \
-    openssl
+    PATH=/usr/local/bin:$PATH
 
 # Copy Python dependencies from builder
-COPY --from=builder /root/.local /home/appuser/.local
+COPY --from=builder /install /usr/local
 
 # Copy application files
 COPY mcp_pipe.py .
@@ -43,7 +36,7 @@ COPY mcp_config.json .
 COPY *.py ./
 
 # Create non-root user
-RUN adduser -D -u 1000 appuser && \
+RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
 
 USER appuser
